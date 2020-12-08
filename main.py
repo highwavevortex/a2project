@@ -21,6 +21,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = './uploads'
 DATA_UPLOAD_FOLDER = './data-uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'csv'}
+HOSTNAME = os.getenv('HOST')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DATA_UPLOAD_FOLDER'] = DATA_UPLOAD_FOLDER
 
@@ -254,28 +255,49 @@ def upload_school_data(schoolid, userclass):
     if file and is_csv(file.filename):
         filename = secure_filename(file.filename) # gets rid of security attacks/threats
         file.save(os.path.join(app.config['DATA_UPLOAD_FOLDER'], filename)) # save to upload folder
-        # TODO implement further logic - it is being implamented in the store_data_in_db function
+        # TODO implement further logic - it is being implemented in the store_data_in_db function
         result = store_data_in_db(file.filename, userclass)
         if result == False:
             return jsonify({"err": "couldnt parse data"}), 500
         else:
             return jsonify({"msg": "data uploaded successfully"})
 
-# CREATE SIGN UP LINK
+# GET CSV WITH NAME, EMAIL AND LINK FOR MAIL MERGE
+@app.route('/<schoolID>/getcsv', methods=['GET'])
+def getCSV(schoolID): # Change to schoolName if time
+    print(HOSTNAME)
+    with open(schoolID + '.csv', mode='w') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['forename','surname','email','link'])
+        for user in User.objects:
+            writer.writerow([user.forename, user.surname, user.email, HOSTNAME + '/' + schoolID + '/register/' + str(user.id)])
+    return jsonify({"msg": "done"})
 
-'''
-generate string of x amount of characters
-
-create string such as http://classroom/login/<uniqueString>
-'''
+# example classroom.co.uk/schoolID/register/objectID
 
 @app.route('/<schoolID>/register/<objectID>', methods=['GET', 'POST'])
-def registerUser(schoolID, objectID, current_user_id):
-    user = User.objects(id=current_user_id).first()
-    passHash = request.set(passHash)
-    user.password = passHash
+def registerUser(schoolID, objectID):
+    user = User.objects(id=objectID).first()
+    res = request.json
+    user.passwordHash = res['passHash']
     user.save()
     return jsonify({"msg": "user registered"})
+
+# TODO generate spreadsheet w/ 3 columns name, email, and link
+
+# get query getCSV to return stuff
+
+
+'''
+@app.route('/<schoolID>/getlinks', methods=['GET'])
+def getSchoolLinks(schoolID):
+    userForename = User.objects(forename).first()
+    userSurname = User.objects(surname).first()
+    userEmail = User.objects(email).first()
+# pull name and email from db
+# create headers
+# concatenate https://classroom.com/ + <schoolID> + / + register/ + <objectID>
+'''
 
 # RUNS THE PROGRAM
 if __name__ == "__main__":

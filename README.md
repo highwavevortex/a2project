@@ -7,7 +7,7 @@
     - [x] Login
     - [x] User Roles
     - [x] Uploading User Data
-    - [ ] Sign Up Links
+    - [x] Sign Up Links - REVISIT DURING FRONT END
 - [ ] Registers
     - [ ] Submitting Registers
     - [ ] Editing Registers
